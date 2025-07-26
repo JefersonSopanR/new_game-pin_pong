@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Pong Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>🏓 Simple Pong Game</h1>
+    
+    <div class="info">
+        <div id="playerInfo">Connecting...</div>
+        <div class="score">
+            Player 1: <span id="score1">0</span> | 
+            Player 2: <span id="score2">0</span>
+        </div>
+    </div>
+    
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+    
+    <div class="controls">
+        <h3>🎮 How to Play:</h3>
+        <p><strong>Move your mouse up/down</strong> to control your paddle</p>
+        <p><strong>Multiple rooms available!</strong> Players are automatically matched.</p>
+        <p>Each room supports 2 players. New rooms are created automatically.</p>
+        <p>First player = Player 1 (left), Second player = Player 2 (right)</p>
+    </div>
+
+    <!-- Include Socket.IO client library -->
+    <script src="/socket.io/socket.io.js"></script>
+    <!-- Include game logic -->
+    <script src="game.js"></script>
+</body>
+</html>
