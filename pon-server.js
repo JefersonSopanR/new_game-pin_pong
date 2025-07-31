@@ -98,9 +98,6 @@ io.on('connection', function (socket) {
     socket.roomId = roomId;
     socket.isPlayer1 = isPlayer1;
     
-    console.log(`👥 Player ${socket.id} joined ${roomId} as Player ${isPlayer1 ? '1' : '2'}`);
-    console.log(`📊 Room ${roomId} now has ${room.players.length}/2 players`);
-    
     // Send initial game state
     socket.emit('gameUpdate', room.gameState);
     
@@ -164,14 +161,14 @@ function updateGame(gameState) {
     
     // Ball collision with paddles
     // Player 1 paddle
-    if (gameState.ball.x <= 30 && 
+    if (gameState.ball.x === 20 && 
         gameState.ball.y >= gameState.player1.y && 
         gameState.ball.y <= gameState.player1.y + 100) {
         gameState.ball.vx = -gameState.ball.vx;
     }
     
     // Player 2 paddle
-    if (gameState.ball.x >= 770 && 
+    if (gameState.ball.x === 780 && 
         gameState.ball.y >= gameState.player2.y && 
         gameState.ball.y <= gameState.player2.y + 100) {
         gameState.ball.vx = -gameState.ball.vx;
