@@ -1,0 +1,25 @@
+version: "3.9"
+
+services:
+  pong:
+    build: .
+    container_name: pong_app
+    restart: unless-stopped
+    networks:
+      - pong_network
+
+  nginx:
+    build: ./nginx_container
+    container_name: pong_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - pong
+    networks:
+      - pong_network
+
+
+networks:
+  pong_network:
