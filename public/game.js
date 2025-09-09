@@ -1,4 +1,4 @@
-// Get canvas and context 
+// Get canvas and context
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
@@ -9,9 +9,31 @@ const socket = io();
 let isPlayer1 = false;
 let gameState = null;
 
-// When connected to server
-socket.on('connect', function() {
-    console.log('✅ Connected to game server with ID:', socket.id);
+socket.on("connect", () => {
+    const modal = document.getElementById("continueModal");
+    const message = document.getElementById("continueMessage");
+    const yesBtn = document.getElementById("continueYes");
+    const noBtn = document.getElementById("continueNo");
+
+    if (!modal || !message || !yesBtn || !noBtn) return;
+
+    message.textContent = "Who do you want to play against?";
+    modal.style.display = "flex";
+
+    yesBtn.onclick = () => {
+        socket.emit("joinGame", { mode: "AI" });
+        modal.style.display = "none";
+    };
+
+    noBtn.onclick = () => {
+        socket.emit("joinGame", { mode: "PVP" });
+        modal.style.display = "none";
+    };
+});
+
+socket.on("waitingForPlayer", (data) => {
+    document.getElementById("playerInfo").textContent = data.message;
+    console.log("⏳", data.message);
 });
 
 // When server assigns us a player
@@ -21,7 +43,7 @@ socket.on('playerAssignment', function(data) {
     document.getElementById('playerInfo').textContent = data.message;
 });
 
-// When game is ready (both players connected or AI active)
+// When game is ready (both players connected)
 socket.on('gameReady', function(data) {
     console.log('✅ Game ready:', data.message);
     document.getElementById('playerInfo').textContent = document.getElementById('playerInfo').textContent + ' - Game Ready!';
@@ -44,35 +66,8 @@ canvas.addEventListener('mousemove', function(e) {
     const rect = canvas.getBoundingClientRect();
     const mouseY = e.clientY - rect.top;
     
-    // Send paddle position to server (mouse control)
+    // Send paddle position to server
     socket.emit('paddleMove', { y: mouseY - 50 }); // -50 to center paddle on mouse
-});
-
-// --- Keyboard controls ---
-// We send keyPress / keyRelease events to server (so server can process movement)
-// This allows server-side AI to "simulate keyboard input" by using same handlers.
-const keyToAction = (e) => {
-    if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') return 'up';
-    if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') return 'down';
-    return null;
-};
-
-const pressedKeys = new Set();
-
-window.addEventListener('keydown', (e) => {
-    const action = keyToAction(e);
-    if (!action) return;
-    if (pressedKeys.has(action)) return; // already pressed
-    pressedKeys.add(action);
-    // send to server
-    socket.emit('keyPress', { key: action });
-});
-
-window.addEventListener('keyup', (e) => {
-    const action = keyToAction(e);
-    if (!action) return;
-    pressedKeys.delete(action);
-    socket.emit('keyRelease', { key: action });
 });
 
 // Draw game

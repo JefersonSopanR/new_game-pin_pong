@@ -4,7 +4,7 @@
   "main": "pon-server.js",
   "type": "module",
   "scripts": {
-	"start": "node pon-server.js",
+    "start": "nodemon pon-server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -15,5 +15,8 @@
     "@fastify/static": "^8.2.0",
     "fastify": "^5.4.0",
     "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
   }
 }
