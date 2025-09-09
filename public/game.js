@@ -21,6 +21,8 @@ socket.on("connect", () => {
     modal.style.display = "flex";
 
     yesBtn.onclick = () => {
+        const levelDifficulty = document.getElementById("levelDifficulty");
+        levelDifficulty.style.display = "flex";
         socket.emit("joinGame", { mode: "AI" });
         modal.style.display = "none";
     };
@@ -30,6 +32,13 @@ socket.on("connect", () => {
         modal.style.display = "none";
     };
 });
+
+function setDifficulty(level) {
+    // Example: send difficulty to server or update game settings
+    socket.emit('setDifficulty', { level });
+    // Optionally, update UI or show a message
+    console.log('Difficulty set to:', level);
+}
 
 socket.on("waitingForPlayer", (data) => {
     document.getElementById("playerInfo").textContent = data.message;

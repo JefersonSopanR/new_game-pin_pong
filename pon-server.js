@@ -41,40 +41,44 @@ function findAvailableRoom() {
         players: [],
         gameState: createGameState(),
         aiEnabled: false,
-        ready: false   // new flag
+        ready: false,   // new flag
+        aiDifficulty: "medium"
     };
     return newRoomId;
 }
 
+
+//AI Logic with Difficulty
+const DIFFICULTY_SETTINGS = {
+    easy:    { paddleSpeed: 3, errorRange: 40, refreshRate: 1500 }, // slow + big errors
+    medium:  { paddleSpeed: 5, errorRange: 20, refreshRate: 1000 }, // balanced
+    hard:    { paddleSpeed: 8, errorRange: 5,  refreshRate: 500 }   // fast + precise
+};
+
 // ---------------- AI Logic ----------------
 function refreshAILogic(room) {
+    const { paddleSpeed, errorRange } = DIFFICULTY_SETTINGS[room.aiDifficulty];
     const ball = room.gameState.ball;
     const paddle = room.gameState.player2;
 
     if (ball.vx > 0) { 
-        //how many frames (time steps) it will take the ball to reach the paddle position.
         const timeToReach = (paddle.x - ball.x) / ball.vx;
-        //Predicts the ball's future Y position when it reaches the paddle's X coordinate
         let predictedY = ball.y + ball.vy * timeToReach;
 
-        //this is so the paddle stays within the game boundaries
         predictedY = Math.max(0, Math.min(400 - paddle.height, predictedY));
-
-        //Adding imperfection so the AI sometimes aims slightly above or below the perfect spot:
-        const error = Math.random() * 30 - 15; // ±15 px difficulty
+        const error = Math.random() * errorRange - errorRange / 2;
         paddle.targetY = predictedY + error;
     } else {
-        //move the paddle to the center
         paddle.targetY = 200 - paddle.height / 2;
     }
 }
 
-function updateAIPaddle(paddle) {
-    //Gradually move the paddle toward targetY, maximum 5 pixels per frame
+function updateAIPaddle(paddle, difficulty) {
+    const { paddleSpeed } = DIFFICULTY_SETTINGS[difficulty];
     if (paddle.y < paddle.targetY) {
-        paddle.y += Math.min(5, paddle.targetY - paddle.y);
+        paddle.y += Math.min(paddleSpeed, paddle.targetY - paddle.y);
     } else if (paddle.y > paddle.targetY) {
-        paddle.y -= Math.min(5, paddle.y - paddle.targetY);
+        paddle.y -= Math.min(paddleSpeed, paddle.y - paddle.targetY);
     }
 }
 
@@ -89,7 +93,7 @@ setInterval(() => {
         if (room.players.length > 0) {
             // Run AI if enabled
             if (room.aiEnabled) {
-                updateAIPaddle(room.gameState.player2);
+                updateAIPaddle(room.gameState.player2, room.aiDifficulty);
             }
 
             updateGame(room.gameState);
@@ -103,15 +107,19 @@ setInterval(() => {
     }
 }, 1000/60);
 
-// AI decision refresh (once per second)
-setInterval(() => {
-    for (let roomId in gameRooms) {
-        const room = gameRooms[roomId];
-        if (room.aiEnabled) {
-            refreshAILogic(room);
-        }
-    }
-}, 1000);
+function startAIInterval(roomId) {
+    const room = gameRooms[roomId];
+    if (!room || !room.aiEnabled) return;
+
+    const { refreshRate } = DIFFICULTY_SETTINGS[room.aiDifficulty];
+
+    // Clear old timer if exists
+    if (room.aiTimer) clearInterval(room.aiTimer);
+
+    room.aiTimer = setInterval(() => {
+        refreshAILogic(room);
+    }, refreshRate);
+}
 
 // ---------------- Socket.IO ----------------
 io.on('connection', function (socket) {
@@ -127,7 +135,9 @@ io.on('connection', function (socket) {
             gameRooms[roomId] = {
                 players: [],
                 gameState: createGameState(),
-                aiEnabled: true
+                aiEnabled: true,
+                ready: false,
+                aiDifficulty: "medium" // default difficulty
             };
         } else {
             // PvP mode → find or create a room with space
@@ -154,7 +164,8 @@ io.on('connection', function (socket) {
         });
 
         if (room.aiEnabled) {
-            room.ready = true; // AI game can start immediately
+            room.ready = true;
+            startAIInterval(roomId);
             io.to(roomId).emit("gameReady", {
                 message: `Game ready in ${roomId}! You're playing against AI 🤖`
             });
@@ -169,6 +180,15 @@ io.on('connection', function (socket) {
             socket.emit("waitingForPlayer", {
                 message: `Waiting for an opponent to join room ${roomId}...`
             });
+        }
+    });
+
+    socket.on('setDifficulty', (data) => {
+        const room = gameRooms[socket.roomId];
+        if (room && ["easy", "medium", "hard"].includes(data.level)) {
+            room.aiDifficulty = data.level;
+            console.log(`🎚️ Difficulty for ${socket.roomId} set to ${data.level}`);
+            startAIInterval(socket.roomId); // restart with new refreshRate
         }
     });
 
