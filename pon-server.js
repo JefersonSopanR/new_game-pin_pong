@@ -57,7 +57,7 @@ const DIFFICULTY_SETTINGS = {
 
 // ---------------- AI Logic ----------------
 function refreshAILogic(room) {
-    const { paddleSpeed, errorRange } = DIFFICULTY_SETTINGS[room.aiDifficulty];
+    const { errorRange } = DIFFICULTY_SETTINGS[room.aiDifficulty];
     const ball = room.gameState.ball;
     const paddle = room.gameState.player2;
 
